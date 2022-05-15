@@ -22,6 +22,7 @@ PARAMS = {
   "grant_type": GRANT_TYPE
 }
 
+
 r1 = requests.post(url = URL, params = PARAMS)
 
 token = r1.json()["access_token"]
@@ -36,17 +37,27 @@ headers = {
 streamer_name = "iitztimmy"
 stream = requests.get('https://api.twitch.tv/helix/streams?user_login=' + streamer_name, headers=headers)
 
-# Get channels being followed
-followed = requests.get("https://api.twitch.tv/helix/streams/followed", headers=headers)
-obj = json.loads(followed)
+user = requests.get('https://api.twitch.tv/helix/users?login=brian92617', headers=headers)
+#print(user.text)
 
-name = []
+# Get channels being followed and output all current live channels
+followed = requests.get('https://api.twitch.tv/helix/users/follows?from_id=206770467&first=100', headers=headers)
+obj = json.loads(followed.text)
+
+liveCheck = "https://api.twitch.tv/helix/streams?"
+
+# Go through all followed channels
 for user in obj['data']:
-    if 'user_id' in user:
-        name.append(user['user_id'])
+    if 'to_name' in user:
+        liveCheck += "user_login=" + user['to_name'] + "&"
 
-print(' '.join(name))
-
+ # Check if followed channels are live
+check = requests.get(liveCheck, headers=headers)
+checkTest = json.loads(check.text)
+for live in checkTest['data']:
+    if live['type'] == "live":
+        print(live['user_login'] + " is " + live['type'] + " with " + str(live['viewer_count']) + " viewers")
+        
 
 # Extract streams
 streams = session.streams("https://twitch.tv/{}".format(streamer_name))

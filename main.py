@@ -2,6 +2,8 @@ import os
 import requests
 import yaml
 import json
+import time
+import subprocess
 from streamlink import Streamlink
 
 # Load API keys
@@ -33,17 +35,15 @@ headers = {
     'Authorization': 'Bearer ' + token
 }
 
-# Make GET request from Twitch
-streamer_name = "iitztimmy"
-stream = requests.get('https://api.twitch.tv/helix/streams?user_login=' + streamer_name, headers=headers)
-
-user = requests.get('https://api.twitch.tv/helix/users?login=brian92617', headers=headers)
-#print(user.text)
+# Used to get user's ID
+# user = requests.get('https://api.twitch.tv/helix/users?login=brian92617', headers=headers)
+# print(user.text)
 
 # Get channels being followed and output all current live channels
 followed = requests.get('https://api.twitch.tv/helix/users/follows?from_id=206770467&first=100', headers=headers)
 obj = json.loads(followed.text)
 
+name=[]
 liveCheck = "https://api.twitch.tv/helix/streams?"
 
 # Go through all followed channels
@@ -57,7 +57,16 @@ checkTest = json.loads(check.text)
 for live in checkTest['data']:
     if live['type'] == "live":
         print(live['user_login'] + " is " + live['type'] + " with " + str(live['viewer_count']) + " viewers")
+        name.append(live['user_login'])
         
 
-# Extract streams
-streams = session.streams("https://twitch.tv/{}".format(streamer_name))
+# Play stream
+for names in name:
+    process = subprocess.Popen('streamlink --player-args "--fullscreen --play-and-exit" https://twitch.tv/{} best'.format(names))
+    try:
+        print('Running in process', process.pid)
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        print('Timed out - killing', process.pid)
+        process.terminate()
+    print("Done")

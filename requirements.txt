@@ -1,0 +1,4 @@
+keyboard==0.13.5
+PyYAML==6.0
+requests==2.27.1
+streamlink==4.0.1
